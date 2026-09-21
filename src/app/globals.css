@@ -1,0 +1,32 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-50: #fff4ee;
+  --color-brand-100: #ffe3d2;
+  --color-brand-400: #f7844a;
+  --color-brand-500: #f05d1a;
+  --color-brand-600: #d94d0e;
+  --color-brand-700: #b33c08;
+  --color-navy-950: #070d36;
+  --color-navy-900: #0b1450;
+  --color-navy-800: #0d1b5e;
+  --color-navy-700: #1b2c85;
+  --color-navy-50: #eef0fb;
+  --font-sans: "Times New Roman", Times, "Liberation Serif", "Nimbus Roman", "Tinos", Georgia, serif;
+}
+
+:root { color-scheme: light; }
+/* Times renders small for its nominal size, so the root size is nudged up (all sizes are rem-based). */
+html { -webkit-text-size-adjust: 100%; font-size: 106.25%; }
+body { @apply bg-slate-50 text-slate-800 antialiased; font-family: var(--font-sans); }
+::selection { background: var(--color-brand-100); }
+.tabular { font-variant-numeric: tabular-nums; }
+/* Balances stay in the DOM (for layout) but are unreadable and un-selectable when hidden. */
+.masked { filter: blur(8px); user-select: none; pointer-events: none; }
+:focus-visible { outline: 2px solid var(--color-brand-500); outline-offset: 2px; }
+dialog::backdrop { background: rgb(7 13 54 / 0.55); backdrop-filter: blur(2px); }
+@media (prefers-reduced-motion: reduce) { * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; } }
+
+/* Bottom sheet: slide up from the bottom edge */
+@keyframes sheet-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
+dialog[data-sheet][open] { animation: sheet-up 0.28s cubic-bezier(0.32, 0.72, 0, 1); }
