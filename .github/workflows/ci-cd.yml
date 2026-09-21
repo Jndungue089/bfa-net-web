@@ -49,7 +49,7 @@ jobs:
             if [ -n "${LATEST_TAG}" ]; then
               tags+=(-t "${LATEST_TAG}")
             fi
-            docker build "${tags[@]}" --file ./Dockerfile .
+            docker build "${tags[@]}" --file ./Dockerfile --build-arg BACKEND_URL=http://bfa-net-api:5080 .
             docker push "${{ steps.meta.outputs.image-ref }}"
             if [ -n "${LATEST_TAG}" ]; then
               docker push "${LATEST_TAG}"
