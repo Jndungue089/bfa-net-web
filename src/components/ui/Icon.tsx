@@ -1,5 +1,5 @@
 import {
-  AlertCircle, ArrowDownCircle, ArrowLeftRight, ArrowUpCircle, Banknote, CalendarDays, Camera, Check, CheckCircle2, ChevronRight, Copy, CreditCard,
+  AlertCircle, ArrowDownCircle, HandCoins, Lightbulb, PiggyBank, Repeat, Sparkles, TrendingUp, TriangleAlert, ArrowLeftRight, ArrowUpCircle, Banknote, CalendarDays, Camera, Check, CheckCircle2, ChevronRight, Copy, CreditCard,
   Download, ExternalLink, Eye, EyeOff, FileText, Globe, Hash, Home, ImagePlus, Info, Keyboard, LayoutGrid, Landmark, Lock, LockOpen, LogOut, Mail, MapPin,
   Phone, Plane, Plus, Printer, QrCode, Receipt, ScanBarcode, Send, Settings2, Share2, ShieldCheck, Smartphone, Trash2, User, UserPlus, Users, Wallet, Wifi, X, Zap,
   type LucideIcon,
@@ -12,6 +12,7 @@ const icons = {
   globe: Globe, wifi: Wifi, cash: Banknote, plane: Plane, file: FileText, share: Share2, send: Send, info: Info, call: Phone, mail: Mail, link: ExternalLink,
   pin: MapPin, chevron: ChevronRight, x: X, calendar: CalendarDays, barcode: ScanBarcode, keypad: Keyboard, hash: Hash, userPlus: UserPlus, printer: Printer,
   image: ImagePlus, alert: AlertCircle, wallet: Wallet, user: User,
+  sparkles: Sparkles, piggy: PiggyBank, coins: HandCoins, trend: TrendingUp, bulb: Lightbulb, warn: TriangleAlert, repeat: Repeat,
 } satisfies Record<string, LucideIcon>;
 
 export type IconName = keyof typeof icons;

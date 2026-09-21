@@ -14,7 +14,7 @@ Browser ──► Next (proxy.ts: CSP com nonce + porta optimista de sessão)
    └─ cookies HttpOnly (bfa_at · bfa_rt · bfa_sess) ─ nunca legíveis por JavaScript
 ```
 
-- **`next.config.ts`** — `rewrites` para o backend, `redirects` das rotas antigas (`/transfers`, `/payments`), cabeçalhos de segurança (X-Frame-Options, HSTS, Permissions-Policy com `camera=(self)`, COOP), `Cache-Control: no-store` em `/api/*`, `productionBrowserSourceMaps: false`, `poweredByHeader: false`, `transpilePackages: ["@bfa/shared"]`.
+- **`next.config.ts`** — `rewrites` para o backend, `redirects` das rotas antigas (`/transfers`, `/payments`), `turbopack.root` no monorepo (necessário porque `apps/web` pode ter o seu próprio `.git`), cabeçalhos de segurança (X-Frame-Options, HSTS, Permissions-Policy (câmara desligada), COOP), `Cache-Control: no-store` em `/api/*`, `productionBrowserSourceMaps: false`, `poweredByHeader: false`, `transpilePackages: ["@bfa/shared"]`.
 - **`src/proxy.ts`** — (1) gera um **nonce por pedido** e aplica a CSP (`script-src 'self' 'nonce-…' 'strict-dynamic'`, sem `unsafe-inline` em scripts); (2) **porta optimista**: sem o cookie-sinal `bfa_sess` redireciona para `/login`; com sessão, `/login` e `/register` redirecionam para `/dashboard`. É só UX — o backend valida o JWT em cada chamada. Ignora `/api`, `_next` e ficheiros de imagem. O `RootLayout` lê `headers()` para forçar render dinâmico (necessário para o nonce).
 - **Sessão**: cookies definidos pelo backend — `bfa_at` (10 min, `Path=/api`), `bfa_rt` (`Path=/api/v1/auth`), `bfa_sess` (`Path=/`, sem conteúdo). O `store/session` guarda só o perfil (não secreto).
 - **CSRF**: o cliente envia `X-BFA-Client: web`; o backend exige-o (e um `Origin` permitido) em pedidos com cookies.
@@ -27,15 +27,15 @@ Browser ──► Next (proxy.ts: CSP com nonce + porta optimista de sessão)
 app/
   (auth)/   login · register            layout dividido com o BrandLockup por cima do formulário
   (app)/    layout → AppShell (barra lateral em ≥ lg, barra inferior em telemóvel)
-    dashboard/  services/  cards/  statement/  transactions/[id]/  profile/(security)  beneficiaries/  contacts/  about/  accounts/[id]/
-    services/ payments/(reference) · state · recharges/[provider] · qr · transfers/(iban · kwik/(key · qr))
+    dashboard/  services/  assistant/  cards/  statement/  transactions/[id]/  profile/(security)  beneficiaries/  contacts/  about/
+    services/ payments/(reference) · state · recharges/[provider] · transfers/(iban · kwik/key)
 components/
   ui/          primitivas pequenas: Button, TextField, DigitsField, MoneyField, PinField, PasswordField, SelectField,
                Card, Alert, Badge, Modal, Sheet (gaveta inferior), Toggle, Skeleton, Icon (lucide)
-  features/    AppShell, BankCard, ServiceTile/ProviderTile, Receipt/FlowShell, PinConfirmDialog, QrScanner, CardSettingsSheet,
+  features/    AppShell, BankCard, BalancePanel, ServiceTile/ProviderTile, Receipt/FlowShell, PinConfirmDialog, CardSettingsSheet,
                StatementList, Avatar, BrandLockup, … e forms/ (um formulário por operação)
 hooks/         useAuth · useBank (dados + mutações de dinheiro) · useAvatar · useIdleTimeout    ← "hooks first"
-lib/           api (cliente), query (QueryClient), about (texto do site, servidor), csv (anti-injecção de fórmulas), cn
+lib/           api (cliente), query (QueryClient), about (texto do site, servidor), cn
 stores/        session (perfil) · privacy (ocultar saldos, persistido)
 proxy.ts
 ```
@@ -50,11 +50,12 @@ proxy.ts
 - **Tipografia**: Times New Roman (raiz a 106,25 % porque a serifada parece pequena); ícones em vez de palavras nas acções secundárias.
 
 ### Funcionalidades específicas da web
-- **Serviços**: cartão em cima + grelha (serviços, Estado, carregamentos com logos, QR, transferências). **QR**: `QrScanner` usa `BarcodeDetector` (Chromium) com a câmara; fora disso, colar o código (sempre disponível). O nome dentro do QR é tratado como não verificado; mostra-se o titular resolvido pelo servidor.
-- **Cartões**: `BankCard` (CSS) + `CardSettingsSheet` (gaveta que sobe de baixo): canais, limite e bloqueio.
+- **Serviços**: cartão + `BalancePanel` (painel de saldo com ocultar/mostrar) e grelha (serviços, Estado, carregamentos com logos, transferências IBAN/KWiK por chave). **Sem pagamentos por QR na web** (só na app móvel).
+- **Cartões**: `BankCard` (CSS, cor primária do BFA) + `CardSettingsSheet` (gaveta que sobe de baixo): canais, limite e bloqueio. **Atualização otimista** (`useUpdateCard`): o controlo tocado muda logo, sem refetch nem desativar os outros; se o pedido falhar, só os campos dessa chamada são revertidos (mudanças concorrentes noutros controlos sobrevivem) e aparece o aviso.
 - **Comprovativo**: o recibo e o detalhe da transação descarregam o **PDF emitido pelo backend** (`GET /api/v1/transactions/{id}/receipt.pdf`, ligação `<a download>` autenticada pelo cookie e servida pelo mesmo proxy).
-- **Cartões**: cor primária do BFA (laranja) no débito.
-- **Extracto**: períodos, sumário, **Imprimir/Guardar PDF** (o CSS de impressão esconde a shell) e **CSV** com neutralização de injecção de fórmulas.
+- **Extracto** (`/statement?account=<id>`): conta, período (mês/30/90/personalizado validado com `dateRangeSchema`), sumário e o botão **PDF**, que descarrega o extracto **emitido pelo backend** (`GET /api/v1/accounts/{id}/statement.pdf`). Nada é gerado no browser (sem CSV/impressão). Layout a 2 colunas em telemóvel (3 números não cabiam a 360 px).
+- **Valores**: nas listas de movimentos/extracto levam sinal (+/−); no recibo e no detalhe só o valor e o tipo de operação. "Terminar sessão" está a vermelho.
+- **Assistente** (`/assistant`): saúde financeira (anel + 4 factores), indicadores (gasto, orçamento diário, taxa de poupança), alertas/sugestões, gráfico de rendimento vs gastos (2 séries validadas, legenda, *tooltip* e vista em tabela), categorias, recorrentes, **Poupar agora** (`SaveDialog`: transferência com PIN) e `CreditPanel` (simulador com RHF + `makeCreditSchema`, simulação no servidor, PIN, plano e pagamento de prestação). Respeita «ocultar saldos». Componentes em `components/features/assistant/`.
 - **Fotografia**: envia o ficheiro **original** por `multipart` ao backend, que valida, recorta, redimensiona e re-codifica (`hooks/useAvatar`).
 - **Sobre**: *server component* que obtém o "Quem somos" do bfa.ao e mantém **só texto** (nada de HTML de terceiros é renderizado); lista de permissões de origem e *timeout*. **Contactos** vêm da API; só se aceitam ligações `tel:`, `mailto:` e `https://www.bfa.ao`.
 - Sem login biométrico na web (exigiria WebAuthn).
@@ -63,7 +64,7 @@ proxy.ts
 
 | | |
 |---|---|
-| `BACKEND_URL` | destino dos `rewrites` (servidor; `http://localhost:5080` por omissão) — ver `.env.example` |
+| `BACKEND_URL` | destino dos `rewrites` (servidor; `http://localhost:5080` por omissão; em produção `https://bfa-api.josemarsilva.me`). **Lido no `next build`** — mudar exige novo build. Ver `.env.example` |
 | `pnpm dev` / `build` / `start` | `next dev` · `next build` · `next start` |
 | `pnpm typecheck` · `pnpm lint` | `tsc --noEmit` · ESLint |
 

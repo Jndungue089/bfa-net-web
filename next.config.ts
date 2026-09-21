@@ -1,3 +1,4 @@
+import path from "node:path";
 import type { NextConfig } from "next";
 
 // The browser only ever talks to this origin. /api/* is proxied to the .NET backend, so the API needs
@@ -14,6 +15,8 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Monorepo root (pnpm workspace). Explicit because a nested .git in apps/web makes Next guess the wrong root.
+  turbopack: { root: path.resolve(__dirname, "../..") },
   reactStrictMode: true,
   poweredByHeader: false,
   // Never ship source maps to browsers: they would expose original source, comments and internal structure.

@@ -12,8 +12,9 @@ import { IdleGuard } from "./IdleGuard";
 const NAV: Array<{ href: string; label: string; icon: IconName; mobile?: boolean }> = [
   { href: "/dashboard", label: "Resumo", icon: "home", mobile: true },
   { href: "/services", label: "Serviços", icon: "grid", mobile: true },
+  { href: "/assistant", label: "Assistente", icon: "sparkles", mobile: true },
   { href: "/cards", label: "Cartões", icon: "card", mobile: true },
-  { href: "/statement", label: "Extracto", icon: "file", mobile: true },
+  { href: "/statement", label: "Extracto", icon: "file" },
   { href: "/beneficiaries", label: "Beneficiários", icon: "users" },
   { href: "/profile", label: "Perfil", icon: "user", mobile: true },
 ];
