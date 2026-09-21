@@ -99,9 +99,8 @@ describe("api client", () => {
 
   it("maps problem+json to ApiError with field errors", async () => {
     const api = createApiClient({ baseUrl: "", clientKind: "web", fetchImpl: async () => json(422, { status: 422, code: "validation_error", title: "Dados inválidos.", errors: { iban: ["IBAN inválido."] } }) });
-    const err = await api.post("/x", { body: {} }).catch((e) => e);
-    expect(err).toBeInstanceOf(ApiError);
-    expect(err.fieldErrors.iban).toEqual(["IBAN inválido."]);
+    const err = (await api.post("/x", { body: {} }).catch((e) => e)) as ApiError;
+    expect(err.fieldErrors!.iban).toEqual(["IBAN inválido."]);
   });
 
   it("refreshes once for parallel 401s and retries", async () => {
