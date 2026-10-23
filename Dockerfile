@@ -1,4 +1,4 @@
-FROM node:22-alpine
+FROM node:24.22.1-alpine
 WORKDIR /app
 COPY . .
 ARG BACKEND_URL=http://localhost:5080
